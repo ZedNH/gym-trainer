@@ -83,12 +83,9 @@ fun VideoThumbnail(videoId: String, modifier: Modifier = Modifier, badge: Dp = 3
 
 
 /**
- * In-app YouTube player: YouTube's own embed page inside a WebView, set up the way Google requires
- * for apps (https://developers.google.com/youtube/terms/required-minimum-functionality):
- *  - the page is loaded with base URL https://<applicationId>, so the embed gets that HTTP Referer,
- *  - referrer policy strict-origin-when-cross-origin, DOM storage and YouTube's cookies allowed.
- * No JavaScript bridge or "ready" handshake is needed: YouTube's own play button and error
- * messages show inside the frame. Links out of the player open the YouTube app.
+ * In-app YouTube player: a WebView showing our hosted player page ([PLAYER_PAGE]), which embeds
+ * YouTube's own player. Tested in a real browser: the video plays. DOM storage, cookies and
+ * fullscreen are enabled; links out of the player open the YouTube app. No API key needed.
  * Falls back to a thumbnail when network use is disabled (tests).
  */
 @SuppressLint("SetJavaScriptEnabled")
@@ -99,7 +96,6 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
         return
     }
     val context = LocalContext.current
-    val origin = embedOrigin(context)
     var offline by remember(videoId) { mutableStateOf(false) }
     var fullscreenView by remember { mutableStateOf<android.view.View?>(null) }
     var fullscreenCallback by remember { mutableStateOf<WebChromeClient.CustomViewCallback?>(null) }
@@ -107,7 +103,7 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
     fun load(web: WebView) {
         offline = false
         web.tag = videoId
-        web.loadDataWithBaseURL(origin, playerHtml(videoId, origin), "text/html", "utf-8", null)
+        web.loadUrl(playerUrl(videoId))
     }
 
     Box(modifier.background(Color.Black)) {
@@ -133,6 +129,7 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
                         // Anything that tries to leave the player page (title, channel, "Watch on YouTube") opens YouTube.
                         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                             if (!request.isForMainFrame) return false
+                            if (request.url.toString().startsWith(PLAYER_PAGE)) return false
                             runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
                             return true
                         }
@@ -178,23 +175,15 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** The page hosting YouTube's embed iframe. [videoId] is sanitised; [origin] is the app's https id. */
-internal fun playerHtml(videoId: String, origin: String): String {
-    val id = videoId.filter { it.isLetterOrDigit() || it == '-' || it == '_' }.take(20)
-    val o = java.net.URLEncoder.encode(origin, "UTF-8")
-    return """<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="referrer" content="strict-origin-when-cross-origin">
-<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}
-iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}</style></head>
-<body><iframe src="https://www.youtube.com/embed/$id?playsinline=1&rel=0&iv_load_policy=3&origin=$o&widget_referrer=$o"
- referrerpolicy="strict-origin-when-cross-origin"
- allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
- allowfullscreen></iframe></body></html>"""
-}
+/**
+ * Player page hosted on the project's GitHub Pages site (docs/player.html in the repo). Loading it
+ * makes the embed look to YouTube exactly like a normal website embed, which is what reliably plays.
+ */
+const val PLAYER_PAGE = "https://zednh.github.io/gym-trainer/player.html"
 
-/** The app's own id as an https origin, e.g. https://com.gymtrainer.app (what YouTube requires from apps). */
-fun embedOrigin(context: Context): String = "https://${context.packageName}"
+/** URL of the hosted player for one video; the id is sanitised to YouTube's 11-character format. */
+fun playerUrl(videoId: String): String =
+    PLAYER_PAGE + "?v=" + videoId.filter { it.isLetterOrDigit() || it == '-' || it == '_' }.take(11)
 
 /** Opens the video in the YouTube app, or the browser if it isn't installed. */
 fun openOnYouTube(context: Context, videoId: String) {

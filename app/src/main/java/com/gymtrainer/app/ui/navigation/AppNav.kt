@@ -2,6 +2,7 @@
 
 package com.gymtrainer.app.ui.navigation
 
+import androidx.compose.runtime.collectAsState
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -98,6 +99,7 @@ object Routes {
     const val CATEGORY = "category/{cat}"
     const val GYM_CATEGORY = "gymcat/{cat}"
     const val GYM_PLAN = "gymplan"
+    const val VIDEO_SEARCH = "videosearch/{q}"
     const val VOLUME = "volume"
     const val ROUTINE_NEW = "newroutine"
     const val TOOLS = "tools"
@@ -115,6 +117,7 @@ object Routes {
     fun gymProgram(id: String) = "gymprogram/$id"
     fun category(cat: com.gymtrainer.app.domain.WorkoutCategory) = "category/${cat.name}"
     fun gymCategory(cat: com.gymtrainer.app.domain.GymCategory) = "gymcat/${cat.name}"
+    fun videoSearch(query: String) = "videosearch/${Uri.encode(query)}"
     fun addFood(meal: Meal, day: Long) = "food/${meal.name}/$day"
 }
 
@@ -252,7 +255,17 @@ fun AppRoot() {
                 ExerciseDetailScreen(exerciseId = id, onBack = { nav.popBackStack() }, onVideos = { nav.navigate(Routes.videos(id)) })
             }
             composable(Routes.VIDEOS) { entry ->
-                VideoTutorialScreen(entry.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() })
+                val picked by entry.savedStateHandle.getStateFlow<String?>("picked", null).collectAsState()
+                VideoTutorialScreen(entry.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() },
+                    onSearch = { nav.navigate(Routes.videoSearch(it)) },
+                    picked = picked, onPickedHandled = { entry.savedStateHandle["picked"] = null })
+            }
+            composable(Routes.VIDEO_SEARCH) { entry ->
+                com.gymtrainer.app.ui.videos.VideoSearchScreen(entry.arguments?.getString("q").orEmpty(), onBack = { nav.popBackStack() },
+                    onPicked = { id ->
+                        nav.previousBackStackEntry?.savedStateHandle?.set("picked", id)
+                        nav.popBackStack()
+                    })
             }
             composable(Routes.ROUTINE) { entry ->
                 val dayId = entry.arguments?.getString("dayId")?.toLongOrNull() ?: -1L

@@ -1,5 +1,6 @@
 package com.gymtrainer.app.ui.videos
 
+import androidx.compose.runtime.LaunchedEffect
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -68,7 +69,13 @@ import com.gymtrainer.app.ui.theme.Brand
 import kotlinx.coroutines.launch
 
 @Composable
-fun VideoTutorialScreen(exerciseId: String, onBack: () -> Unit) {
+fun VideoTutorialScreen(
+    exerciseId: String,
+    onBack: () -> Unit,
+    onSearch: (String) -> Unit = {},
+    picked: String? = null,
+    onPickedHandled: () -> Unit = {}
+) {
     val repo = rememberRepository()
     val videos = rememberVideos()
     val settings = rememberSettings()
@@ -78,25 +85,20 @@ fun VideoTutorialScreen(exerciseId: String, onBack: () -> Unit) {
     val exercise by produceState<ExerciseEntity?>(null, exerciseId) { value = repo.exercise(exerciseId) }
     val verified = remember(exerciseId) { videos.verified(exerciseId) }
     val mine by videos.observeMine(exerciseId).collectAsState(initial = emptyList())
-    var results by remember { mutableStateOf<List<Tutorial>>(emptyList()) }
-    var searching by remember { mutableStateOf(false) }
-    var searchError by remember { mutableStateOf<String?>(null) }
-    var query by remember(exercise) { mutableStateOf(exercise?.let { "${it.name} proper form tutorial" } ?: "") }
+    val query = exercise?.let { "${it.name} exercise proper form" } ?: "exercise tutorial"
     var showAdd by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<Tutorial?>(null) }
     val current = selected ?: (verified + mine).firstOrNull()
-    val hasKey = settings.youtubeApiKey.isNotBlank()
 
     fun openExternal(url: String) = context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
 
-    fun runSearch() {
-        searching = true; searchError = null
-        scope.launch {
-            videos.search(query, settings.youtubeApiKey)
-                .onSuccess { results = it; if (it.isEmpty()) searchError = "No embeddable videos found." }
-                .onFailure { searchError = "Search failed. Check your API key and connection." }
-            searching = false
-        }
+    // A video picked in the in-app YouTube search: save it to this exercise and play it.
+    LaunchedEffect(picked) {
+        val id = picked ?: return@LaunchedEffect
+        val t = videos.lookup(id) ?: Tutorial(id, "YouTube video", "", VideoSource.MINE)
+        videos.save(exerciseId, t)
+        selected = t
+        onPickedHandled()
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -134,7 +136,7 @@ fun VideoTutorialScreen(exerciseId: String, onBack: () -> Unit) {
             item {
                 Row(Modifier.padding(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     SecondaryButton("Paste link", { showAdd = true }, Modifier.weight(1f).height(48.dp), icon = Icons.Filled.Link)
-                    SecondaryButton("Browse", { openExternal(YouTube.searchUrl(query)) }, Modifier.weight(1f).height(48.dp), icon = Icons.Filled.OpenInNew)
+                    SecondaryButton("Search", { onSearch(query) }, Modifier.weight(1f).height(48.dp), icon = Icons.Filled.Search)
                 }
             }
 
@@ -153,34 +155,16 @@ fun VideoTutorialScreen(exerciseId: String, onBack: () -> Unit) {
                 }
             }
 
-            // Search
-            item { SectionHeader("Find more") }
-            if (hasKey) {
-                item {
-                    Row(Modifier.padding(horizontal = Gutter), verticalAlignment = Alignment.CenterVertically) {
-                        AppTextField(query, { query = it }, "Search YouTube", Modifier.weight(1f),
-                            leading = { Icon(Icons.Filled.Search, contentDescription = null, tint = AppTheme.colors.textMuted) })
-                        Spacer(Modifier.width(10.dp))
-                        PillButton(if (searching) "…" else "Search", { runSearch() }, enabled = !searching && query.isNotBlank())
-                    }
-                }
-                searchError?.let { e -> item { Text(e, Modifier.padding(horizontal = Gutter), color = AppTheme.colors.danger, style = MaterialTheme.typography.bodySmall) } }
-                items(results, key = { "s_" + it.videoId }) { t ->
-                    VideoRow(t, t == current, onPlay = { selected = t }) {
-                        IconButton(onClick = { scope.launch { videos.save(exerciseId, t) } }) {
-                            Icon(Icons.Filled.BookmarkAdd, contentDescription = "Save", tint = MaterialTheme.colorScheme.primary)
+            // Find more: free, inside the app.
+            item {
+                AppCard(Modifier.padding(horizontal = Gutter), onClick = { onSearch(query) }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconBadge(Icons.Filled.Search, Brand.Red, 44.dp)
+                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text("Find more on YouTube", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Search right here, tap a video, and it plays above and is saved to this exercise.",
+                                style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.textMuted)
                         }
-                    }
-                }
-            } else {
-                item {
-                    AppCard(Modifier.padding(horizontal = Gutter)) {
-                        Text("Search inside the app", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "Add your own free YouTube Data API key in Profile → Video search to find and play tutorials for any of the 880+ exercises here. Or tap Browse to search in the YouTube app.",
-                            style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.textMuted
-                        )
                     }
                 }
             }

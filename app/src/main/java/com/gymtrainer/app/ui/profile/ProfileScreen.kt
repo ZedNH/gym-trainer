@@ -99,8 +99,6 @@ fun ProfileScreen(contentPadding: PaddingValues, onEditProfile: () -> Unit, onTo
     var upToDate by remember { mutableStateOf(false) }
     var found by remember { mutableStateOf<com.gymtrainer.app.data.AppUpdate?>(null) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var showKey by remember { mutableStateOf(false) }
-    var ytKey by remember { mutableStateOf(settings.youtubeApiKey) }
 
     fun applyReminder(on: Boolean) { reminder = on; settings.reminderOn = on; Reminders.apply(context) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { applyReminder(it) }
@@ -213,9 +211,6 @@ fun ProfileScreen(contentPadding: PaddingValues, onEditProfile: () -> Unit, onTo
             AppCard(Modifier.padding(horizontal = Gutter), padding = PaddingValues(vertical = 4.dp)) {
                 SettingRow(Icons.Filled.Calculate, Brand.Orange, "Gym tools", "1RM · plates · BMI", onClick = onTools)
                 RowDivider()
-                SettingRow(Icons.Filled.SmartDisplay, Brand.Red, "Video search",
-                    if (ytKey.isBlank()) "Off" else "API key set", onClick = { showKey = true })
-                RowDivider()
                 SettingRow(Icons.Filled.Info, Brand.Blue, "About & credits", onClick = { showAbout = true })
                 RowDivider()
                 SettingRow(Icons.Filled.SystemUpdate, Brand.Green, "App updates",
@@ -233,25 +228,6 @@ fun ProfileScreen(contentPadding: PaddingValues, onEditProfile: () -> Unit, onTo
     }
 
     choice?.let { c -> ChoiceDialog(c) { choice = null } }
-
-    if (showKey) {
-        var draft by remember { mutableStateOf(ytKey) }
-        AlertDialog(
-            onDismissRequest = { showKey = false },
-            containerColor = AppTheme.colors.card,
-            title = { Text("YouTube video search") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Verified tutorials work without this. To search YouTube for any exercise inside the app, paste your own free " +
-                        "YouTube Data API v3 key (Google Cloud Console → APIs & Services → Credentials). It is stored only on this phone.",
-                        style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.textMuted)
-                    com.gymtrainer.app.ui.components.AppTextField(draft, { draft = it }, "API key")
-                }
-            },
-            confirmButton = { TextButton(onClick = { settings.youtubeApiKey = draft; ytKey = draft.trim(); showKey = false }) { Text("Save") } },
-            dismissButton = { TextButton(onClick = { settings.youtubeApiKey = ""; ytKey = ""; showKey = false }) { Text("Remove") } }
-        )
-    }
 
     found?.let { com.gymtrainer.app.ui.components.UpdateDialog(it) { found = null } }
 

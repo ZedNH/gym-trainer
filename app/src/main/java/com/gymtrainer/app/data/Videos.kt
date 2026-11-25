@@ -83,23 +83,6 @@ class VideoRepository(private val assets: AssetManager, private val dao: VideoDa
         }.getOrNull()
     }
 
-    /** Search YouTube with the user's own Data API key; returns only embeddable videos. */
-    suspend fun search(query: String, apiKey: String): Result<List<Tutorial>> = withContext(Dispatchers.IO) {
-        runCatching {
-            val url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true" +
-                "&safeSearch=strict&maxResults=10&q=" + URLEncoder.encode(query, "UTF-8") +
-                "&key=" + URLEncoder.encode(apiKey.trim(), "UTF-8")
-            val items = JSONObject(httpGet(url)).getJSONArray("items")
-            (0 until items.length()).mapNotNull { i ->
-                val it = items.getJSONObject(i)
-                val id = it.optJSONObject("id")?.optString("videoId").orEmpty()
-                val sn = it.optJSONObject("snippet") ?: return@mapNotNull null
-                if (id.length != 11) null
-                else Tutorial(id, android.text.Html.fromHtml(sn.optString("title"), 0).toString(), sn.optString("channelTitle"), VideoSource.SEARCH)
-            }
-        }
-    }
-
     private fun httpGet(url: String): String {
         val c = URL(url).openConnection() as HttpURLConnection
         c.connectTimeout = 10_000

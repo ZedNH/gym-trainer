@@ -6,7 +6,7 @@ import com.gymtrainer.app.domain.CoachExercise
 import com.gymtrainer.app.domain.CoachLanguage
 import com.gymtrainer.app.domain.CoachLines
 import com.gymtrainer.app.domain.Tips
-import com.gymtrainer.app.ui.videos.playerHtml
+import com.gymtrainer.app.ui.videos.playerUrl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -65,11 +65,16 @@ class VoiceCoachTest {
         assertFalse(Tips.forExercise(pushup, CoachLanguage.ENGLISH, Random(2)).contains("heels"))
     }
 
-    @Test fun playerPageIdentifiesTheAppAndSanitisesIds() {
-        val html = playerHtml("dQw4w9WgXcQ\"><script>", "https://com.gymtrainer.app")
-        assertTrue(html.contains("https://www.youtube.com/embed/dQw4w9WgXcQscript?"))
-        assertFalse(html.contains("<script>"))
-        assertTrue(html.contains("origin=https%3A%2F%2Fcom.gymtrainer.app"))
-        assertTrue(html.contains("referrerpolicy=\"strict-origin-when-cross-origin\""))
+    @Test fun playerUrlPointsAtHostedPageAndSanitisesIds() {
+        assertEquals("https://zednh.github.io/gym-trainer/player.html?v=dQw4w9WgXcQ", playerUrl("dQw4w9WgXcQ"))
+        val evil = playerUrl("dQw4w9WgXcQ\"><script>")
+        assertFalse(evil.contains("<") || evil.contains("\""))
+    }
+
+    @Test fun pickedSearchResultIdIsExtracted() {
+        // The exact URL shape YouTube's mobile site switches to when a result is tapped.
+        assertEquals("IODxDxX7oi4", com.gymtrainer.app.data.YouTube.parseId(
+            "https://m.youtube.com/watch?v=IODxDxX7oi4&pp=ygUTcHVzaCB1cCBwcm9wZXIgZm9ybdIHCQkQCAGHKiGM7w%3D%3D"))
+        assertEquals("abcdefghijk", com.gymtrainer.app.data.YouTube.parseId("https://m.youtube.com/shorts/abcdefghijk"))
     }
 }

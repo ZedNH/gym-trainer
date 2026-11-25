@@ -34,10 +34,6 @@ class Settings(context: Context) {
         get() = prefs.getString("theme_mode", "LIGHT") ?: "LIGHT"
         set(v) = prefs.edit().putString("theme_mode", v).apply()
 
-    /** Optional, user-provided YouTube Data API key (stored only on this device). */
-    var youtubeApiKey: String
-        get() = prefs.getString("yt_key", "") ?: ""
-        set(v) = prefs.edit().putString("yt_key", v.trim()).apply()
 
     /** Used only for the calorie estimate: MALE / FEMALE / UNSPECIFIED. */
     var sexForCalories: String
