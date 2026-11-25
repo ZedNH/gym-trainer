@@ -1,5 +1,7 @@
 package com.gymtrainer.app.ui.home
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import android.speech.tts.TextToSpeech
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -83,16 +85,9 @@ fun GuidedWorkoutScreen(workoutKey: String, onClose: () -> Unit, onVideo: (Strin
         onDispose { view.keepScreenOn = false }
     }
 
-    val tts = remember { mutableStateOf<TextToSpeech?>(null) }
-    DisposableEffect(Unit) {
-        var engine: TextToSpeech? = null
-        engine = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) { engine?.language = Locale.US; tts.value = engine }
-        }
-        onDispose { engine?.stop(); engine?.shutdown() }
-    }
+    val voice = com.gymtrainer.app.ui.rememberCoachVoice()
     LaunchedEffect(vm) {
-        vm.speech.collect { line -> if (voiceOn) tts.value?.speak(line, TextToSpeech.QUEUE_FLUSH, null, line.hashCode().toString()) }
+        vm.speech.collect { cue -> if (voiceOn) voice.say(cue) }
     }
 
     BackHandler(enabled = s.phase != Phase.DONE) { confirmQuit = true }
@@ -128,9 +123,34 @@ fun GuidedWorkoutScreen(workoutKey: String, onClose: () -> Unit, onVideo: (Strin
                     Box(Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(if (done) fill else if (i == s.index) fill.copy(alpha = 0.5f) else track))
                 }
             }
+            // Coach language: tap to switch English <-> বাংলা.
+            val bangla = voice.requested == com.gymtrainer.app.domain.CoachLanguage.BANGLA
+            Box(
+                Modifier.padding(end = 8.dp).height(40.dp).clip(RoundedCornerShape(50))
+                    .background(if (resting) Color.White.copy(alpha = 0.18f) else AppTheme.colors.card)
+                    .clickable {
+                        val next = if (bangla) com.gymtrainer.app.domain.CoachLanguage.ENGLISH else com.gymtrainer.app.domain.CoachLanguage.BANGLA
+                        voice.setLanguage(next); settings.coachLanguage = next.name
+                    }
+                    .semantics { contentDescription = "Coach language" }
+                    .padding(horizontal = 14.dp),
+                contentAlignment = Alignment.Center
+            ) { Text(if (bangla) "বাং" else "EN", style = MaterialTheme.typography.labelLarge, color = onBg) }
             CircleIconButton(if (voiceOn) Icons.Filled.VolumeUp else Icons.Filled.VolumeOff, "Voice coach",
-                { voiceOn = !voiceOn; settings.voiceCoach = voiceOn }, tint = onBg,
+                { voiceOn = !voiceOn; settings.voiceCoach = voiceOn; if (!voiceOn) voice.stop() }, tint = onBg,
                 background = if (resting) Color.White.copy(alpha = 0.18f) else AppTheme.colors.card)
+        }
+        if (voice.banglaMissing && voiceOn) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = Gutter, vertical = 4.dp).clip(RoundedCornerShape(14.dp))
+                    .background(Brand.Amber.copy(alpha = 0.16f))
+                    .clickable { runCatching { context.startActivity(com.gymtrainer.app.ui.CoachVoice.installIntent()) } }
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("বাংলা ভয়েস এই ফোনে নেই, তাই আপাতত ইংরেজিতে বলছে। Tap to install the Bangla voice.",
+                    style = MaterialTheme.typography.bodySmall, color = onBg)
+            }
         }
 
         when (s.phase) {

@@ -23,12 +23,11 @@ script. Attribution is not required by the license but is given here as a courte
 (https://github.com/itfoundry/Poppins), licensed under the SIL Open Font License 1.1.
 The full license text is in [POPPINS_OFL.txt](POPPINS_OFL.txt).
 
-## android-youtube-player
+## YouTube tutorials
 
-In-app video tutorials use **android-youtube-player** by Pierfrancesco Soffritti
-(https://github.com/PierfrancescoSoffritti/android-youtube-player), MIT License. It wraps
-YouTube's official IFrame Player API. Videos are streamed from YouTube, never downloaded
-or re-hosted, and belong to their creators.
+In-app video tutorials embed YouTube's official embed player (`youtube.com/embed`) in an Android
+WebView, identified to YouTube with the app's id as required by YouTube's API terms. Videos are
+streamed from YouTube, never downloaded or re-hosted, and belong to their creators.
 
 `app/src/main/assets/videos.json` lists tutorial video IDs that were checked via YouTube's
 public oEmbed endpoint (exists + embeddable) when the list was built.

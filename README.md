@@ -3,6 +3,16 @@
 A native, offline Android app that combines guided **home workouts** with a **gym planner
 and set logger**, personalised from a short onboarding. No account, no server, no API keys.
 
+## New in v6.5
+
+- **বাংলা ভয়েস কোচ / Bangla voice coach**: the trainer talks in Bangla during guided workouts and in the gym
+  logger: get ready, start, reps/seconds, 3-2-1, halfway, rest, next exercise, set done, rest over.
+- **Tips while you train**: form cues for the exercise you're doing (squat, push-up, plank, lunge, jumps…),
+  motivation, breathing and water reminders during rest, in Bangla or English.
+- Switch language in the player (EN / বাং chip) or Profile → Coach language. Uses the phone's Bangla
+  text-to-speech voice; if it isn't installed the app offers to install it and uses English meanwhile.
+- **YouTube player rebuilt**: YouTube's own embed page in a WebView, set up as YouTube requires for apps.
+
 ## New in v6.0 — a coach that drives progress
 
 - **Auto-progression (double progression)** — every exercise gets *Today's target*: hit the top of

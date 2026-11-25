@@ -1,5 +1,14 @@
 package com.gymtrainer.app.ui.videos
 
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.Dialog
+import android.webkit.WebViewClient
+import android.webkit.WebView
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceError
+import android.webkit.WebChromeClient
+import android.webkit.CookieManager
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -13,8 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalContext
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import android.graphics.BitmapFactory
 import android.util.LruCache
 import androidx.compose.foundation.Image
@@ -27,8 +34,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -41,15 +46,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.gymtrainer.app.data.YouTube
 import com.gymtrainer.app.ui.components.MotionPrefs
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
@@ -80,14 +81,17 @@ fun VideoThumbnail(videoId: String, modifier: Modifier = Modifier, badge: Dp = 3
     }
 }
 
+
 /**
- * Official YouTube IFrame player (via android-youtube-player). Cues [videoId]; the user
- * presses play. Falls back to a thumbnail when network use is disabled (tests).
- *
- * YouTube rejects embeds that don't identify their host ("Error 152/153"). The player
- * is initialised manually so its origin (also the WebView base URL, i.e. the Referer) is
- * this app's id. If YouTube still refuses a video, a "Watch on YouTube" fallback appears.
+ * In-app YouTube player: YouTube's own embed page inside a WebView, set up the way Google requires
+ * for apps (https://developers.google.com/youtube/terms/required-minimum-functionality):
+ *  - the page is loaded with base URL https://<applicationId>, so the embed gets that HTTP Referer,
+ *  - referrer policy strict-origin-when-cross-origin, DOM storage and YouTube's cookies allowed.
+ * No JavaScript bridge or "ready" handshake is needed: YouTube's own play button and error
+ * messages show inside the frame. Links out of the player open the YouTube app.
+ * Falls back to a thumbnail when network use is disabled (tests).
  */
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
     if (!MotionPrefs.allowNetwork) {
@@ -95,44 +99,59 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
         return
     }
     val context = LocalContext.current
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    var player by remember { mutableStateOf<YouTubePlayer?>(null) }
-    var view by remember { mutableStateOf<YouTubePlayerView?>(null) }
-    var failed by remember(videoId) { mutableStateOf(false) }
-    var reason by remember(videoId) { mutableStateOf("") }
+    val origin = embedOrigin(context)
+    var offline by remember(videoId) { mutableStateOf(false) }
+    var fullscreenView by remember { mutableStateOf<android.view.View?>(null) }
+    var fullscreenCallback by remember { mutableStateOf<WebChromeClient.CustomViewCallback?>(null) }
 
-    Box(modifier) {
+    fun load(web: WebView) {
+        offline = false
+        web.tag = videoId
+        web.loadDataWithBaseURL(origin, playerHtml(videoId, origin), "text/html", "utf-8", null)
+    }
+
+    Box(modifier.background(Color.Black)) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
-                YouTubePlayerView(ctx).also { v ->
-                    view = v
-                    v.enableAutomaticInitialization = false
-                    lifecycle.addObserver(v)
-                    val options = IFramePlayerOptions.Builder()
-                        .controls(1).rel(0).ivLoadPolicy(3).fullscreen(0)
-                        .origin(embedOrigin(ctx))
-                        .build()
-                    // YouTube's consent / bot checks need its cookies; Android WebViews block third-party cookies by default.
-                    allowYouTubeCookies(v)
-                    v.initialize(object : AbstractYouTubePlayerListener() {
-                        override fun onReady(youTubePlayer: YouTubePlayer) {
-                            player = youTubePlayer
-                            youTubePlayer.cueVideo(videoId, 0f)
+                WebView(ctx).apply {
+                    setBackgroundColor(android.graphics.Color.BLACK)
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true            // YouTube's player script needs localStorage
+                    settings.mediaPlaybackRequiresUserGesture = false
+                    settings.loadWithOverviewMode = true
+                    settings.useWideViewPort = true
+                    CookieManager.getInstance().setAcceptCookie(true)
+                    CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+                    webChromeClient = object : WebChromeClient() {
+                        override fun onShowCustomView(view: android.view.View, callback: CustomViewCallback) {
+                            fullscreenView = view; fullscreenCallback = callback
                         }
-                        override fun onError(youTubePlayer: YouTubePlayer, error: PlayerConstants.PlayerError) {
-                            reason = describe(error)
-                            failed = true
+                        override fun onHideCustomView() { fullscreenView = null; fullscreenCallback = null }
+                    }
+                    webViewClient = object : WebViewClient() {
+                        // Anything that tries to leave the player page (title, channel, "Watch on YouTube") opens YouTube.
+                        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                            if (!request.isForMainFrame) return false
+                            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
+                            return true
                         }
-                    }, options)
+                        override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                            if (request.isForMainFrame || request.url.host?.contains("youtube") == true && request.url.path?.startsWith("/embed") == true) {
+                                offline = true
+                            }
+                        }
+                    }
+                    load(this)
                 }
-            }
+            },
+            update = { web -> if (web.tag != videoId) load(web) },
+            onRelease = { web -> web.stopLoading(); web.destroy() }
         )
-        if (failed) {
+        if (offline) {
             Box(Modifier.fillMaxSize().background(Color(0xF0101218)), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-                    Text("This video can't play inside the app.", color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                    if (reason.isNotEmpty()) Text(reason, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.bodySmall)
+                    Text("Couldn't reach YouTube. Check your connection.", color = Color.White, style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(10.dp))
                     Row(
                         Modifier.clip(RoundedCornerShape(50)).background(Color(0xFFFF0033))
@@ -146,20 +165,35 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
             }
         }
     }
-    LaunchedEffect(videoId, player) { failed = false; reason = ""; player?.cueVideo(videoId, 0f) }
-    // If YouTube never answers (blocked network, broken WebView), don't leave a blank box.
-    LaunchedEffect(videoId) {
-        kotlinx.coroutines.delay(15_000)
-        if (player == null && !failed) { reason = "The YouTube player didn't load (no response in 15 s)."; failed = true }
-    }
-    DisposableEffect(Unit) {
-        onDispose {
-            view?.let { lifecycle.removeObserver(it); it.release() }
+
+    // YouTube's fullscreen button: show the video over everything until it's closed (or Back).
+    fullscreenView?.let { v ->
+        Dialog(
+            onDismissRequest = { fullscreenCallback?.onCustomViewHidden(); fullscreenView = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+        ) {
+            AndroidView(factory = { (v.parent as? android.view.ViewGroup)?.removeView(v); v },
+                modifier = Modifier.fillMaxSize().background(Color.Black))
         }
     }
 }
 
-/** The app's own id as an https origin, e.g. https://com.gymtrainer.app (what YouTube expects from apps). */
+/** The page hosting YouTube's embed iframe. [videoId] is sanitised; [origin] is the app's https id. */
+internal fun playerHtml(videoId: String, origin: String): String {
+    val id = videoId.filter { it.isLetterOrDigit() || it == '-' || it == '_' }.take(20)
+    val o = java.net.URLEncoder.encode(origin, "UTF-8")
+    return """<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}
+iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}</style></head>
+<body><iframe src="https://www.youtube.com/embed/$id?playsinline=1&rel=0&iv_load_policy=3&origin=$o&widget_referrer=$o"
+ referrerpolicy="strict-origin-when-cross-origin"
+ allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+ allowfullscreen></iframe></body></html>"""
+}
+
+/** The app's own id as an https origin, e.g. https://com.gymtrainer.app (what YouTube requires from apps). */
 fun embedOrigin(context: Context): String = "https://${context.packageName}"
 
 /** Opens the video in the YouTube app, or the browser if it isn't installed. */
@@ -167,24 +201,4 @@ fun openOnYouTube(context: Context, videoId: String) {
     val app = Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:$videoId"))
     val web = Intent(Intent.ACTION_VIEW, Uri.parse(YouTube.watchUrl(videoId)))
     runCatching { context.startActivity(app) }.recoverCatching { context.startActivity(web) }
-}
-
-/** Readable reason for the fallback screen, so a screenshot tells us exactly what YouTube said. */
-private fun describe(error: PlayerConstants.PlayerError): String = when (error) {
-    PlayerConstants.PlayerError.VIDEO_NOT_PLAYABLE_IN_EMBEDDED_PLAYER -> "The creator doesn't allow this video in other apps (error 101/150)."
-    PlayerConstants.PlayerError.VIDEO_NOT_FOUND -> "Video removed or private (error 100)."
-    PlayerConstants.PlayerError.HTML_5_PLAYER -> "YouTube player error (5)."
-    PlayerConstants.PlayerError.INVALID_PARAMETER_IN_REQUEST -> "Invalid video request (2)."
-    else -> "YouTube refused the in-app player (${error.name})."
-}
-
-/** Finds the player's WebView and lets it keep YouTube's cookies. */
-private fun allowYouTubeCookies(root: android.view.View) {
-    val cookies = android.webkit.CookieManager.getInstance()
-    cookies.setAcceptCookie(true)
-    fun walk(v: android.view.View) {
-        if (v is android.webkit.WebView) cookies.setAcceptThirdPartyCookies(v, true)
-        if (v is android.view.ViewGroup) for (i in 0 until v.childCount) walk(v.getChildAt(i))
-    }
-    walk(root)
 }

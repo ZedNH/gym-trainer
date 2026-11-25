@@ -1,5 +1,7 @@
 package com.gymtrainer.app.ui.workout
 
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -118,6 +120,22 @@ fun ActiveWorkoutScreen(dayId: Long, onFinish: () -> Unit, onVideo: (String) -> 
 
     BackHandler { confirmFinish = true }
 
+    // Voice coach (English or Bangla): announce each exercise, logged sets, and the end of rest.
+    val settings = com.gymtrainer.app.ui.rememberSettings()
+    val voice = com.gymtrainer.app.ui.rememberCoachVoice()
+    var voiceOn by remember { mutableStateOf(settings.voiceCoach) }
+    fun coachEx(e: WorkoutExercise) = com.gymtrainer.app.domain.CoachExercise(e.exercise.id, e.exercise.name, e.exercise.pattern, e.exercise.muscleGroup)
+    LaunchedEffect(index, wex.exercise.id) {
+        delay(600)
+        if (voiceOn) voice.say(com.gymtrainer.app.domain.CoachCue.GymExercise(coachEx(wex), wex.sets.size, wex.repMin, wex.repMax))
+    }
+    var restWasRunning by remember { mutableStateOf(false) }
+    LaunchedEffect(rest, restRunning) {
+        if (voiceOn && restRunning && rest in 1..3) voice.say(com.gymtrainer.app.domain.CoachCue.Count(rest))
+        if (voiceOn && restWasRunning && rest == 0) voice.say(com.gymtrainer.app.domain.CoachCue.RestOver)
+        restWasRunning = restRunning && rest > 0
+    }
+
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().navigationBarsPadding()) {
         // Header
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -129,6 +147,9 @@ fun ActiveWorkoutScreen(dayId: Long, onFinish: () -> Unit, onVideo: (String) -> 
                     Text(" ${Format.clock(((now - startedAt) / 1000).toInt())} · $doneSets ${if (doneSets == 1) "set" else "sets"} logged", style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.textMuted)
                 }
             }
+            CircleIconButton(if (voiceOn) Icons.Filled.VolumeUp else Icons.Filled.VolumeOff, "Voice coach",
+                { voiceOn = !voiceOn; settings.voiceCoach = voiceOn; if (!voiceOn) voice.stop() })
+            Spacer(Modifier.width(8.dp))
             PillButton("Finish", { confirmFinish = true }, color = AppTheme.colors.success)
         }
         // Exercise progress
@@ -247,7 +268,10 @@ fun ActiveWorkoutScreen(dayId: Long, onFinish: () -> Unit, onVideo: (String) -> 
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Effort.entries.forEach { e ->
-                        ChoiceCard(e.label, false, { vm.completeSet(index, si, e); effortFor = null }, subtitle = e.rir,
+                        ChoiceCard(e.label, false, {
+                            vm.completeSet(index, si, e); effortFor = null
+                            if (voiceOn) voice.say(com.gymtrainer.app.domain.CoachCue.SetLogged(si + 1, wex.sets.size))
+                        }, subtitle = e.rir,
                             tint = if (e == Effort.PAIN) AppTheme.colors.danger else MaterialTheme.colorScheme.primary)
                     }
                 }

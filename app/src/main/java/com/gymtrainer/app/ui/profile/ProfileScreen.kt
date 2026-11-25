@@ -1,5 +1,6 @@
 package com.gymtrainer.app.ui.profile
 
+import androidx.compose.material.icons.filled.Translate
 import com.gymtrainer.app.data.Updates
 import androidx.compose.material.icons.filled.SystemUpdate
 import kotlinx.coroutines.launch
@@ -93,6 +94,7 @@ fun ProfileScreen(contentPadding: PaddingValues, onEditProfile: () -> Unit, onTo
     var hour by remember { mutableIntStateOf(settings.reminderHour) }
     var choice by remember { mutableStateOf<Choice?>(null) }
     var showAbout by remember { mutableStateOf(false) }
+    var coachLang by remember { mutableStateOf(settings.coachLanguage) }
     var checking by remember { mutableStateOf(false) }
     var upToDate by remember { mutableStateOf(false) }
     var found by remember { mutableStateOf<com.gymtrainer.app.data.AppUpdate?>(null) }
@@ -141,6 +143,13 @@ fun ProfileScreen(contentPadding: PaddingValues, onEditProfile: () -> Unit, onTo
             AppCard(Modifier.padding(horizontal = Gutter), padding = PaddingValues(vertical = 4.dp)) {
                 SettingRow(Icons.Filled.RecordVoiceOver, Brand.Orange, "Voice coach", trailing = {
                     AppSwitch(voice) { voice = it; settings.voiceCoach = it }
+                })
+                RowDivider()
+                SettingRow(Icons.Filled.Translate, Brand.Teal, "Coach language",
+                    com.gymtrainer.app.domain.CoachLanguage.from(coachLang).label, onClick = {
+                    choice = Choice("Coach language", com.gymtrainer.app.domain.CoachLanguage.entries.map { it.name to it.label }, coachLang) {
+                        coachLang = it; settings.coachLanguage = it
+                    }
                 })
                 RowDivider()
                 SettingRow(Icons.Filled.HourglassBottom, Brand.Blue, "Rest between exercises", "${rest}s", onClick = {
@@ -254,7 +263,7 @@ fun ProfileScreen(contentPadding: PaddingValues, onEditProfile: () -> Unit, onTo
             text = {
                 Text("Exercise photos and instructions: free-exercise-db by yuhonas (public domain, Unlicense).\n\n" +
                     "Typeface: Poppins (SIL Open Font License).\n\n" +
-                    "Video player: android-youtube-player (MIT) using YouTube's official IFrame player. Videos belong to their creators.\n\n" +
+                    "Videos: YouTube's official embedded player, streamed from YouTube. Videos belong to their creators.\n\n" +
                     "Workouts, plans, challenges and app code are original to this app.")
             }
         )

@@ -1,5 +1,7 @@
 package com.gymtrainer.app.ui.home
 
+import com.gymtrainer.app.domain.CoachCue
+import com.gymtrainer.app.domain.CoachExercise
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gymtrainer.app.data.ExerciseEntity
@@ -43,8 +45,10 @@ class GuidedViewModel(
     val state: StateFlow<GuidedState> = _state.asStateFlow()
 
     /** Lines for the voice coach. */
-    private val _speech = MutableSharedFlow<String>(extraBufferCapacity = 8)
-    val speech: SharedFlow<String> = _speech.asSharedFlow()
+    private val _speech = MutableSharedFlow<CoachCue>(extraBufferCapacity = 16)
+    val speech: SharedFlow<CoachCue> = _speech.asSharedFlow()
+    /** Seconds spent in the current phase (drives tips and motivation). */
+    private var phaseSeconds = 0
 
     private var ticker: Job? = null
     private var weightKg = 70.0
@@ -67,6 +71,13 @@ class GuidedViewModel(
         return s.exercises[id]?.name ?: id
     }
 
+    private fun coachEx(i: Int): CoachExercise? {
+        val s = _state.value
+        val id = s.workout?.items?.getOrNull(i)?.exerciseId ?: return null
+        val ex = s.exercises[id]
+        return CoachExercise(id, ex?.name ?: id, ex?.pattern ?: "", ex?.muscleGroup ?: "")
+    }
+
     private fun enter(phase: Phase, index: Int) {
         val w = _state.value.workout ?: return
         val item = w.items.getOrNull(index)
@@ -77,13 +88,14 @@ class GuidedViewModel(
             Phase.DONE -> 0
         }
         _state.update { it.copy(phase = phase, index = index, remaining = secs, phaseTotal = secs.coerceAtLeast(1), paused = false) }
+        phaseSeconds = 0
         when (phase) {
-            Phase.READY -> say("Ready to go. Start with ${name(index)}.")
-            Phase.WORK -> say(
-                if (item?.isTimed == true) "${name(index)}. ${item.seconds} seconds." else "${name(index)}. ${item?.reps} reps."
-            )
-            Phase.REST -> say("Take a rest. Next, ${name(index + 1)}.")
-            Phase.DONE -> say("Well done! Workout complete.")
+            Phase.READY -> coachEx(index)?.let { say(CoachCue.Ready(it)) }
+            Phase.WORK -> coachEx(index)?.let {
+                say(CoachCue.Work(it, reps = item?.reps, seconds = if (item?.isTimed == true) item.seconds else null, last = index == w.items.lastIndex))
+            }
+            Phase.REST -> say(CoachCue.Rest(secs, coachEx(index + 1)))
+            Phase.DONE -> say(CoachCue.Done)
         }
     }
 
@@ -95,14 +107,33 @@ class GuidedViewModel(
                 val s = _state.value
                 if (s.paused || s.phase == Phase.DONE) continue
                 _state.update { it.copy(elapsed = it.elapsed + 1) }
+                phaseSeconds++
+                coachDuring(s)
                 if (s.remaining > 0) {
                     val left = s.remaining - 1
                     _state.update { it.copy(remaining = left) }
-                    if (left in 1..3) say("$left")
-                    if (s.phase == Phase.WORK && s.phaseTotal >= 20 && left == s.phaseTotal / 2) say("Half time.")
+                    if (left in 1..3) say(CoachCue.Count(left))
+                    if (s.phase == Phase.WORK && s.phaseTotal >= 20 && left == s.phaseTotal / 2) { say(CoachCue.Half); say(CoachCue.Motivate) }
                     if (left == 0) onPhaseTimeUp()
                 }
             }
+        }
+    }
+
+    /** Form tips and encouragement while an exercise or rest is running. */
+    private fun coachDuring(s: GuidedState) {
+        val timed = s.remaining >= 0
+        when (s.phase) {
+            Phase.WORK -> {
+                // A form tip once the move is under way (not over the last 3-second countdown).
+                if (phaseSeconds == 6 && (!timed || s.remaining > 8)) coachEx(s.index)?.let { say(CoachCue.Tip(it)) }
+                // Long timed moves: a second tip at three quarters.
+                if (timed && s.phaseTotal >= 40 && s.remaining - 1 == s.phaseTotal / 4) coachEx(s.index)?.let { say(CoachCue.Tip(it)) }
+                // Rep-based moves have no timer: encourage every 25 s.
+                if (!timed && phaseSeconds % 25 == 0) say(CoachCue.Motivate)
+            }
+            Phase.REST -> if (phaseSeconds == 4 && s.phaseTotal >= 15) say(CoachCue.RestTip)
+            else -> Unit
         }
     }
 
@@ -154,7 +185,7 @@ class GuidedViewModel(
         val w = s.workout ?: return
         val kcal = w.calories(weightKg, s.elapsed)
         _state.update { it.copy(phase = Phase.DONE, remaining = 0, calories = kcal) }
-        say("Well done! Workout complete.")
+        say(CoachCue.Done)
         viewModelScope.launch {
             repo.recordHomeSession(w.title, s.elapsed, kcal)
             if (w.key.startsWith("c:")) {
@@ -165,5 +196,5 @@ class GuidedViewModel(
         }
     }
 
-    private fun say(text: String) { _speech.tryEmit(text) }
+    private fun say(cue: CoachCue) { _speech.tryEmit(cue) }
 }

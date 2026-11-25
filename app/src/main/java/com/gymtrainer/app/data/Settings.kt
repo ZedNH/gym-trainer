@@ -49,6 +49,11 @@ class Settings(context: Context) {
         get() = prefs.getBoolean("guide_seen", false)
         set(v) = prefs.edit().putBoolean("guide_seen", v).apply()
 
+    /** Voice coach language: ENGLISH or BANGLA (CoachLanguage). */
+    var coachLanguage: String
+        get() = prefs.getString("coach_lang", "ENGLISH") ?: "ENGLISH"
+        set(v) = prefs.edit().putString("coach_lang", v).apply()
+
     var weeklyGoal: Int
         get() = prefs.getInt("weekly_goal", 4)
         set(v) = prefs.edit().putInt("weekly_goal", v).apply()

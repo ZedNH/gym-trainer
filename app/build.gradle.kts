@@ -20,8 +20,8 @@ android {
         applicationId = "com.gymtrainer.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10
-        versionName = "6.4"
+        versionCode = 11
+        versionName = "6.5"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -97,7 +97,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // Official YouTube IFrame player wrapper (MIT) for in-app video tutorials.
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.1")
 
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
