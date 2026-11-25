@@ -1,5 +1,20 @@
 package com.gymtrainer.app.ui.videos
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.platform.LocalContext
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import android.graphics.BitmapFactory
 import android.util.LruCache
 import androidx.compose.foundation.Image
@@ -68,6 +83,10 @@ fun VideoThumbnail(videoId: String, modifier: Modifier = Modifier, badge: Dp = 3
 /**
  * Official YouTube IFrame player (via android-youtube-player). Cues [videoId]; the user
  * presses play. Falls back to a thumbnail when network use is disabled (tests).
+ *
+ * YouTube rejects embeds that don't identify their host ("Error 152/153"). The player
+ * is initialised manually so its origin (also the WebView base URL, i.e. the Referer) is
+ * this app's id. If YouTube still refuses a video, a "Watch on YouTube" fallback appears.
  */
 @Composable
 fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
@@ -75,29 +94,67 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
         VideoThumbnail(videoId, modifier, badge = 56.dp)
         return
     }
+    val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var player by remember { mutableStateOf<YouTubePlayer?>(null) }
     var view by remember { mutableStateOf<YouTubePlayerView?>(null) }
+    var failed by remember(videoId) { mutableStateOf(false) }
 
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            YouTubePlayerView(ctx).also { v ->
-                view = v
-                lifecycle.addObserver(v)
-                v.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-                    override fun onReady(youTubePlayer: YouTubePlayer) {
-                        player = youTubePlayer
-                        youTubePlayer.cueVideo(videoId, 0f)
+    Box(modifier) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                YouTubePlayerView(ctx).also { v ->
+                    view = v
+                    v.enableAutomaticInitialization = false
+                    lifecycle.addObserver(v)
+                    val options = IFramePlayerOptions.Builder()
+                        .controls(1).rel(0).ivLoadPolicy(3).fullscreen(0)
+                        .origin(embedOrigin(ctx))
+                        .build()
+                    v.initialize(object : AbstractYouTubePlayerListener() {
+                        override fun onReady(youTubePlayer: YouTubePlayer) {
+                            player = youTubePlayer
+                            youTubePlayer.cueVideo(videoId, 0f)
+                        }
+                        override fun onError(youTubePlayer: YouTubePlayer, error: PlayerConstants.PlayerError) {
+                            failed = true
+                        }
+                    }, options)
+                }
+            }
+        )
+        if (failed) {
+            Box(Modifier.fillMaxSize().background(Color(0xF0101218)), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
+                    Text("This video can't play inside the app.", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        Modifier.clip(RoundedCornerShape(50)).background(Color(0xFFFF0033))
+                            .clickable { openOnYouTube(context, videoId) }.padding(horizontal = 18.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        Text(" Watch on YouTube", color = Color.White, style = MaterialTheme.typography.labelLarge)
                     }
-                })
+                }
             }
         }
-    )
-    LaunchedEffect(videoId, player) { player?.cueVideo(videoId, 0f) }
+    }
+    LaunchedEffect(videoId, player) { failed = false; player?.cueVideo(videoId, 0f) }
     DisposableEffect(Unit) {
         onDispose {
             view?.let { lifecycle.removeObserver(it); it.release() }
         }
     }
+}
+
+/** The app's own id as an https origin, e.g. https://com.gymtrainer.app (what YouTube expects from apps). */
+fun embedOrigin(context: Context): String = "https://${context.packageName}"
+
+/** Opens the video in the YouTube app, or the browser if it isn't installed. */
+fun openOnYouTube(context: Context, videoId: String) {
+    val app = Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:$videoId"))
+    val web = Intent(Intent.ACTION_VIEW, Uri.parse(YouTube.watchUrl(videoId)))
+    runCatching { context.startActivity(app) }.recoverCatching { context.startActivity(web) }
 }
