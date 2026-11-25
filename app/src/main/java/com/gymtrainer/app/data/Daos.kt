@@ -24,6 +24,9 @@ interface ExerciseDao {
     @Query("SELECT COUNT(*) FROM exercises")
     suspend fun count(): Int
 
+    @Query("SELECT id || '|' || name || '|' || aliases || '|' || imageOf FROM exercises")
+    suspend fun fingerprints(): List<String>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<ExerciseEntity>)
 

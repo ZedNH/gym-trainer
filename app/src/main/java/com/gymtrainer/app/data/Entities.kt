@@ -63,7 +63,9 @@ data class ExerciseEntity(
     val defaultSeconds: Int = 0,
     val featured: Boolean = false, // well-known movement the generator may pick
     /** Equipment variants reuse the photos of the base movement: assets/ex/<imageOf>/. */
-    @ColumnInfo(defaultValue = "") val imageOf: String = ""
+    @ColumnInfo(defaultValue = "") val imageOf: String = "",
+    /** Other names for this exercise (searchable), separated by " | ". */
+    @ColumnInfo(defaultValue = "") val aliases: String = ""
 )
 
 /** A YouTube tutorial the user added for an exercise (pasted link or search result). */

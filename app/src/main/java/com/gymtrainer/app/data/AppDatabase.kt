@@ -21,7 +21,7 @@ import androidx.room.RoomDatabase
         FoodLogEntity::class,
         WaterLogEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -71,6 +71,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v5 → v6: alternative exercise names for search. */
+        val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE exercises ADD COLUMN aliases TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         /** Tests only: install a database before the app first asks for one. */
         fun setInstanceForTesting(db: AppDatabase) { INSTANCE = db }
 
@@ -80,7 +87,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "gym_trainer.db"
-                ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).fallbackToDestructiveMigration().build().also { INSTANCE = it }
             }
     }
 }

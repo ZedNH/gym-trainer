@@ -60,9 +60,9 @@ class DataLayerTest {
     @Test
     fun seedsFullLibraryWithPhotos() = runBlocking {
         val map = repo.exerciseMap()
-        assertTrue("library size ${map.size}", map.size >= 1100)
+        assertTrue("library size ${map.size}", map.size >= 1340)
         val withPhotos = map.values.filter { it.imageCount > 0 }
-        assertTrue("photos for ${withPhotos.size}", withPhotos.size >= 1080)
+        assertTrue("photos for ${withPhotos.size}", withPhotos.size >= 1300)
         // Every photo the library claims must exist in assets (variants point at their base movement).
         withPhotos.forEach { ex ->
             repeat(ex.imageCount) { i -> context.assets.open("ex/${ex.imageOf.ifEmpty { ex.id }}/$i.webp").close() }
@@ -274,6 +274,47 @@ class DataLayerTest {
             assertEquals("Sam", c.getString(0))
             assertEquals("BOTH", c.getString(1))
             assertEquals("", c.getString(2))
+        }
+        helper.close()
+        context.deleteDatabase(name)
+    }
+
+    @Test
+    fun everyRequestedExerciseIsInTheLibrary() = runBlocking {
+        val names = repo.exerciseMap().values.associateBy { it.name }
+        // A sample across the alphabet from the requested list, new and renamed.
+        listOf("Ab Wheel", "Backward Lunge - Smith Machine", "Bicep Curl - Barbell", "Bird Dog", "Chin Up (Assisted)",
+            "Curtsey Lunge - Kettlebell", "Fire Hydrant", "Hip Thrust - Cable", "Lat Pulldown (Reverse Grip) - Band",
+            "Overhead Press (Wide Grip) - Barbell", "Pendlay Row - Barbell", "Push-Up", "Seated Hip Internal Rotation - Band",
+            "Squat Row - Band", "Standing Side Bend - Cable", "Zercher Carry - Barbell", "Burpee", "Jumping Jack")
+            .forEach { assertNotNull("missing $it", names[it]) }
+        // Renamed entries keep their id (history, routines) and stay findable by the old name.
+        val curl = repo.exercise("Barbell_Curl")!!
+        assertEquals("Bicep Curl - Barbell", curl.name)
+        assertEquals("Barbell Curl", curl.aliases)
+        assertEquals("Push-Up", repo.exercise("Pushups")!!.name)
+        // Moves without a matching photo use the icon, never someone else's picture.
+        assertEquals(0, names.getValue("Bird Dog").imageCount)
+    }
+
+    @Test
+    fun migration5To6AddsAliases() {
+        val name = "mig56.db"
+        context.deleteDatabase(name)
+        val helper = androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory().create(
+            androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration.builder(context).name(name)
+                .callback(object : androidx.sqlite.db.SupportSQLiteOpenHelper.Callback(5) {
+                    override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                        db.execSQL("CREATE TABLE exercises (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, imageOf TEXT NOT NULL DEFAULT '')")
+                        db.execSQL("INSERT INTO exercises (id, name) VALUES ('Pushups','Pushups')")
+                    }
+                    override fun onUpgrade(db: androidx.sqlite.db.SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+                }).build()
+        )
+        val db2 = helper.writableDatabase
+        com.gymtrainer.app.data.AppDatabase.MIGRATION_5_6.migrate(db2)
+        db2.query("SELECT name, aliases FROM exercises").use { c ->
+            assertTrue(c.moveToFirst()); assertEquals("Pushups", c.getString(0)); assertEquals("", c.getString(1))
         }
         helper.close()
         context.deleteDatabase(name)

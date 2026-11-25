@@ -78,8 +78,11 @@ fun ExercisesScreen(contentPadding: PaddingValues, nav: NavController, onBack: (
     val activeFilters = listOfNotNull(equipment, category).size
 
     val filtered = remember(all, query, group, equipment, category) {
+        // Ignore spaces, hyphens and brackets: "bentover row", "Bent-over Row" and "push up" all match.
+        val q = query.lowercase().filter { it.isLetterOrDigit() }
+        fun hit(s: String) = s.lowercase().filter { it.isLetterOrDigit() }.contains(q)
         all.filter { ex ->
-            (query.isBlank() || ex.name.contains(query, true) || ex.primaryMuscles.contains(query, true)) &&
+            (q.isEmpty() || hit(ex.name) || hit(ex.aliases) || ex.primaryMuscles.contains(query.trim(), true)) &&
                 (group == null || ex.muscleGroup == group) &&
                 (equipment == null || ex.equipment == equipment) &&
                 (category == null || ex.category == category)

@@ -13,7 +13,7 @@ and set logger**, personalised from a short onboarding. No account, no server, n
 - **Weekly sets per muscle** — hard sets for 10 muscles against a target band for your level, with
   "needs more" hints that link to workouts for that muscle.
 - **Warm-up sets** — a ramp (bar × 10, 50% × 5, 70% × 3, 85% × 1) for heavy lifts, with plates per side.
-- **1,127 exercises** — 240 new equipment variants (Band, Barbell, Cable, Dumbbell, Kettlebell,
+- **1,351 exercises** (v6.2: your requested A–Z list, 506 names) — 240 new equipment variants (Band, Barbell, Cable, Dumbbell, Kettlebell,
   Machine, Smith Machine), each using the photos of its base movement.
 - **In-app updates** — the app checks this repository's GitHub Releases and offers new versions
   (Profile → App updates). Your data is kept when you update.

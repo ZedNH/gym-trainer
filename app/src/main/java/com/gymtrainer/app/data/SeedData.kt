@@ -16,7 +16,7 @@ object SeedData {
 
     fun loadExercises(assets: AssetManager): List<ExerciseEntity> {
         val list = ArrayList<ExerciseEntity>(1200)
-        for (file in listOf("exercises.json", "exercises_variants.json")) {
+        for (file in listOf("exercises.json", "exercises_variants.json", "exercises_requested.json")) {
         val text = runCatching { assets.open(file).bufferedReader(Charsets.UTF_8).use { it.readText() } }.getOrNull() ?: continue
         val arr = JSONArray(text)
         for (i in 0 until arr.length()) {
@@ -53,6 +53,17 @@ object SeedData {
         }
         }
         list += extras
+        // Display names from the user's requested list; the previous name stays searchable.
+        val renames = runCatching {
+            org.json.JSONObject(assets.open("exercise_renames.json").bufferedReader(Charsets.UTF_8).use { it.readText() })
+        }.getOrNull()
+        if (renames != null) for (i in list.indices) {
+            val ex = list[i]
+            val newName = renames.optString(ex.id, "")
+            if (newName.isNotEmpty() && newName != ex.name) {
+                list[i] = ex.copy(name = newName, aliases = ex.name, youtubeQuery = "$newName exercise proper form")
+            }
+        }
         return list
     }
 

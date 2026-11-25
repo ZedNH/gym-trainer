@@ -1,0 +1,319 @@
+# Exercise names requested by the user (transcribed from screenshots of a list, A–Z).
+# "Base | Eq1, Eq2" expands to "Base - Eq1", "Base - Eq2". A bare "Base" is a bodyweight/plain entry.
+Ab Wheel
+Alternating Punch
+Alternating V Up | Band
+Arm Circles
+Arnold Press | Dumbbell
+Back Extension
+Back Extension On Floor
+Back Extension | Band, Machine
+Backward Lunge
+Backward Lunge with Leg Lift
+Backward Lunge | Barbell, Cable, Dumbbell, Kettlebell, Smith Machine
+Ball Slams
+Band Pull Through
+Bench Fly | Cable, Dumbbell
+Bench Jump
+Bench Pistol Squat
+Bench Press (Close Grip) | Barbell, Dumbbell
+Bench Press (Wide Grip) | Barbell, Smith Machine
+Bench Press | Band, Barbell, Cable, Dumbbell, Smith Machine
+Bench Squat
+Bench Squat | Barbell, Dumbbell
+Bent-Arm Pullover | Barbell
+Bent-Knee Bicycle Crunch
+Bent-Knee Side Plank
+Bent-Knee Wipers
+Bent-over Rear Delt Row | Band, Barbell, Dumbbell, Kettlebell, Smith Machine
+Bent-over Reverse Fly | Band, Cable, Dumbbell
+Bent-over Row (Reverse Grip) | Barbell, Dumbbell
+Bent-over Row With Twist | Band
+Bent-over Row | Band, Barbell, Dumbbell, Kettlebell, Smith Machine
+Bicep Curl
+Bicep Curl | Band, Barbell, Cable, Dumbbell, Machine, Smith Machine
+Bicycle Crunch
+Bicycle Crunch | Band
+Bird Dog
+Boxer Shuffle
+Bulgarian Split Squat
+Bulgarian Split Squat | Barbell, Dumbbell
+Burpee
+Butt Kicks
+Cable Pull Through
+Chest Dip
+Chest Dip (Assisted)
+Chin Up
+Chin Up (Assisted)
+Clean and Press | Barbell, Kettlebell
+Clean | Barbell
+Close-Grip Push-up
+Concentration Curl | Band, Barbell, Cable, Dumbbell
+Crossbody Crunch
+Crossbody Hammer Curl | Dumbbell
+Crossbody Mountain Climber
+Crunch
+Crunch Legs On Stability Ball
+Crunch | Machine
+Cuban Rotation
+Cuban Rotation | Band, Dumbbell
+Curtsey Lunge
+Curtsey Lunge | Barbell, Dumbbell, Kettlebell
+Deadlift High Pull | Barbell
+Deadlift | Band, Barbell, Dumbbell, Kettlebell, Smith Machine
+Decline Bench Fly | Cable, Dumbbell
+Decline Bench Press (Wide Grip) | Barbell
+Decline Bench Press | Barbell, Cable, Dumbbell, Smith Machine
+Decline Bench Pullover | Barbell
+Decline Bent-Arm Pullover | Barbell
+Decline Crunch
+Decline Push-Up
+Decline Reverse Crunch
+Diamond Push-up
+Donkey Kick
+Donkey Kick | Machine
+Down-Up Twist | Band, Cable
+Drag Curl | Barbell, Cable, Dumbbell
+Dumbbell Swing
+Elbow Arm Circles
+External Rotation | Band, Cable, Dumbbell
+Face Pull | Band, Cable
+Farmer's Carry | Dumbbell, Kettlebell
+Fire Hydrant
+Flat Around the World | Dumbbell
+Floor Bent-Arm Pullover | Kettlebell
+Floor Press | Barbell
+Front Raise
+Front Raise | Band, Barbell, Cable, Dumbbell, Plate
+Front Squat | Barbell, Cable, Dumbbell, Kettlebell, Smith Machine
+Glute Bridge
+Glute Bridge Abduction
+Glute Bridge Feet On Bench
+Glute Bridge Feet On Bench | Barbell
+Glute Bridge | Barbell, Dumbbell
+Glute Frog Bridge
+Glute Ham Raise
+Glute Kickback
+Glute Kickback | Band
+Good Morning | Band, Barbell, Smith Machine
+Gorilla Chin Crunch
+Hack Squat | Barbell, Machine
+Hammer Curl | Band, Cable, Dumbbell
+Hang Clean | Barbell
+Hang Snatch | Barbell
+Hanging Knee Raise
+Hanging Leg Raise
+Hanging Leg Raise Twist
+Heel Touch
+High Knee Skips
+Hip Abductor | Band, Cable, Machine
+Hip Adductor | Band, Cable, Machine
+Hip Extension | Machine
+Hip Flexion | Band, Machine
+Hip Frog Extension
+Hip Frog Extension | Smith Machine
+Hip Thrust
+Hip Thrust | Barbell, Cable, Smith Machine
+Incline Around the World | Dumbbell
+Incline Bench Fly | Cable, Dumbbell
+Incline Bench Press (Close Grip) | Barbell
+Incline Bench Press | Barbell, Cable, Dumbbell, Smith Machine
+Incline Bicep Curl | Dumbbell
+Incline Chest Press | Machine
+Incline Push-Up
+Incline Reverse Fly | Dumbbell
+Incline Row | Barbell, Cable, Dumbbell
+Internal Rotation | Band, Cable
+Inverted Row
+Inverted Row (Reverse Grip)
+Jump Squat
+Jump Squat | Barbell, Dumbbell
+Jumping Jack
+Kettlebell Swing
+Knee Push-up
+Knee Raise
+Knee Raise Twist
+Kneeling Crunch | Band, Cable
+Kneeling Plank
+Kneeling Pull-down | Band
+Kneeling Torso Rotation | Machine
+Kneeling Triceps Extension
+Lat Pulldown (Close Grip) | Band, Cable
+Lat Pulldown (Reverse Grip) | Band, Cable
+Lat Pulldown (Straight Arm) | Band, Cable
+Lat Pulldown (Wide Grip) | Cable
+Lat Pulldown With Twist | Band
+Lat Pulldown | Cable, Machine
+Lateral Bench Jump
+Lateral Raise
+Lateral Raise | Band, Cable, Dumbbell, Kettlebell, Machine
+Lateral Step-up | Smith Machine
+Leg Bicep Curl
+Leg Extension | Band, Machine
+Leg Press | Machine, Smith Machine
+Long Arm Crunch
+Lunge
+Lunge | Barbell, Cable, Dumbbell, Kettlebell
+Lying Hip Adductor
+Lying Hip Raise | Smith Machine
+Lying Knee Raise
+Lying Leg Curl | Band, Dumbbell, Machine
+Lying Leg Raise
+Lying Reverse Fly
+Mountain Climber
+Muscle Up
+Oblique Crunch
+Oblique V Up
+Overhead Press
+Overhead Press (Close Grip) | Barbell
+Overhead Press (Wide Grip) | Barbell
+Overhead Press | Band, Barbell, Cable, Dumbbell, Kettlebell, Smith Machine
+Overhead Squat | Barbell
+Overhead Triceps Extension | Band, Barbell, Cable, Dumbbell
+Pec Deck Fly | Machine
+Pendlay Row | Barbell
+Pike Push-up
+Pike Push-up Feet On Bench
+Pistol Squat
+Plank
+Power Clean | Barbell
+Power Push Away
+Power Snatch | Barbell
+Prayer Push
+Preacher Curl | Barbell, Cable, Dumbbell, Machine
+Prone Flutter Kicks
+Pull Apart | Band
+Pull Up (Close Grip)
+Pull Up (Reverse Grip)
+Pull Up (Wide Grip)
+Pull Up | Band, Plate
+Pullover | Barbell, Cable, Dumbbell, Machine
+Push Press | Barbell
+Push-Up
+Push-Up Row | Dumbbell
+Push-Up to Side Plank
+Push-Up | Band
+Rack Pull | Barbell
+Renegade Row | Dumbbell, Kettlebell
+Reverse Concentration Curl | Dumbbell
+Reverse Crunch
+Reverse Crunch | Cable, Machine
+Reverse Curl | Band, Barbell, Cable, Dumbbell
+Reverse Plank
+Reverse Wrist Curl | Band, Barbell, Cable, Dumbbell
+Romanian Deadlift | Barbell, Dumbbell
+Row in Doorway
+Russian Twist
+Russian Twist | Dumbbell
+Seated Calf Press | Machine
+Seated Calf Raise | Barbell, Dumbbell, Machine
+Seated Chest Fly | Machine
+Seated Chest Press | Machine
+Seated Crunch | Machine
+Seated Hip Abductor | Machine
+Seated Hip Adductor | Machine
+Seated Hip External Rotation | Band
+Seated Hip Internal Rotation | Band
+Seated In-And-Out
+Seated In-And-Out | Dumbbell
+Seated Leg Curl | Machine
+Seated Leg Press | Machine
+Seated Overhead Press | Barbell, Dumbbell, Machine, Smith Machine
+Seated Rear Delt Row | Dumbbell
+Seated Reverse Fly | Machine
+Seated Row (Close Grip) | Machine
+Seated Row (Wide Grip) | Cable
+Seated Row With Twist | Band
+Seated Row | Cable, Machine
+Seated Torso Rotation | Machine
+Shrug
+Shrug | Barbell, Cable, Dumbbell, Machine, Smith Machine
+Side Bridge
+Side Lunge
+Side Lunge | Barbell, Cable, Dumbbell, Kettlebell
+Side Lying Bicep Curl
+Side Plank
+Single Arm Bent-over Row | Cable, Dumbbell, Kettlebell
+Single Arm Lat Pulldown | Cable
+Single Arm Lateral Raise | Cable
+Single Leg Deadlift
+Single Leg Deadlift | Dumbbell, Kettlebell
+Single Leg Hip Thrust | Barbell
+Single Leg Plank
+Sit-Up
+Sit-Up Twist
+Sit-Up | Dumbbell, Kettlebell
+Skull Crusher | Band, Barbell, Cable, Dumbbell
+Sled Calf Press | Machine
+Snatch Press Under | Barbell
+Snatch Pull | Barbell
+Snatch | Barbell
+Spiderman Push-up
+Split Jerk | Barbell
+Split Squat
+Split Squat | Band, Barbell, Dumbbell, Smith Machine
+Squat
+Squat Calf Press | Machine
+Squat Pulse
+Squat Row | Band
+Squat | Band, Barbell, Dumbbell, Machine, Smith Machine
+Standing Around the World | Dumbbell
+Standing Backhand Raise
+Standing Calf Raise
+Standing Calf Raise On Step | Barbell, Dumbbell, Smith Machine
+Standing Calf Raise | Band, Barbell, Machine, Smith Machine
+Standing Chest Fly | Band, Cable
+Standing Chest Press | Band, Cable
+Standing Decline Fly | Band, Cable
+Standing Decline Press | Band
+Standing Glute Kickback | Band, Cable, Machine
+Standing Incline Fly | Band, Cable, Dumbbell
+Standing Incline Press | Band
+Standing Leg Extension | Band
+Standing Rear Delt Row | Band, Cable
+Standing Reverse Fly | Band
+Standing Row
+Standing Row | Cable
+Standing Side Bend
+Standing Side Bend | Barbell, Cable
+Standing Side Crunch | Cable
+Standing Single Leg Calf Raise
+Standing Single Leg Calf Raise | Dumbbell
+Standing Single Leg Curl
+Standing Single Leg Curl | Band, Cable, Machine
+Standing Torso Rotation | Machine
+Standing Twist | Band, Barbell
+Step-up
+Step-up | Barbell, Dumbbell
+Stiff Leg Deadlift | Band, Barbell, Dumbbell, Kettlebell, Smith Machine
+Straight Arm Plank
+Sumo Deadlift | Barbell
+Sumo Squat
+Sumo Squat | Barbell, Dumbbell, Kettlebell, Smith Machine
+Superman
+Superman Row
+Supine Floor Row
+Thruster | Barbell, Kettlebell
+Toes To Bar
+Triceps Dip
+Triceps Dip (Assisted)
+Triceps Dip On Bench
+Triceps Dip On Floor
+Triceps Extension | Cable, Machine
+Triceps Kickback | Band, Cable, Dumbbell
+Triceps Pushdown | Band, Cable
+Tuck Crunch | Dumbbell
+Turkish Get Up | Kettlebell
+Twisting Overhead Press | Band, Cable
+Up-Down Twist | Band, Cable, Dumbbell
+Upright Row | Band, Barbell, Cable, Dumbbell, Smith Machine
+V-Up
+V-Up | Band, Dumbbell
+Wall Push-up
+Wide Arm Push-up
+Wide Curl | Barbell
+Windmill | Kettlebell
+Wipers
+Wrist Curl | Band, Barbell, Cable, Dumbbell
+Wrist Roller | Plate
+Zercher Carry | Barbell

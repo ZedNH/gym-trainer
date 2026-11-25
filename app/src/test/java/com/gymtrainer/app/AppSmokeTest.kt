@@ -57,7 +57,7 @@ class AppSmokeTest {
         // Library → exercise → in-app video tutorials.
         compose.onAllNodes(hasSetTextAction()).onFirst().performTextInput("pushup")
         ui.settle()
-        ui.click("Pushups")
+        ui.click("Push-Up")
         ui.waitFor("Video tutorials")
         ui.click("Video tutorials")
         ui.waitFor("Verified tutorials")

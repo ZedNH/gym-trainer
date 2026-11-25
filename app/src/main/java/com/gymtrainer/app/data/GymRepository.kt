@@ -42,7 +42,9 @@ class GymRepository(
     suspend fun ensureSeeded() {
         // Upsert the bundled library whenever its size changes (new exercises in an update). Logs keep their ids.
         val library = SeedData.loadExercises(assets)
-        if (exerciseDao.count() != library.size) {
+        // Upsert when anything users see changed (new exercises, renamed ones, photos).
+        val stored = exerciseDao.fingerprints().toHashSet()
+        if (stored.size != library.size || library.any { "${it.id}|${it.name}|${it.aliases}|${it.imageOf}" !in stored }) {
             exerciseDao.insertAll(library)
             exerciseCache = null
         }
