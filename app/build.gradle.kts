@@ -20,8 +20,8 @@ android {
         applicationId = "com.gymtrainer.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 8
-        versionName = "6.2"
+        versionCode = 9
+        versionName = "6.3"
         vectorDrawables { useSupportLibrary = true }
     }
 

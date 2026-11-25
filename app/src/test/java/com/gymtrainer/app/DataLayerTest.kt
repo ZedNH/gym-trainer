@@ -344,6 +344,14 @@ class DataLayerTest {
     }
 
     @Test
+    fun updateInstallerRejectsDamagedDownloads() {
+        val f = com.gymtrainer.app.data.UpdateInstaller.apkFile(context)
+        f.writeText("not an apk")
+        assertNotNull(com.gymtrainer.app.data.UpdateInstaller.verify(context, f))
+        f.delete()
+    }
+
+    @Test
     fun updateCheckerComparesVersionsAndParsesReleases() {
         val u = com.gymtrainer.app.data.Updates
         assertTrue(u.isNewer("v6.1", "6.0")); assertTrue(u.isNewer("6.0.1", "6.0")); assertTrue(u.isNewer("10.0", "9.9"))
