@@ -1,0 +1,23 @@
+*.iml
+.gradle/
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Signing material — keep out of version control
+/keystore.properties
+/app/*.jks
+/app/*.keystore
+
+# Build outputs and local files
+/app/build
+/apk/
+*.apk
+hs_err_pid*.log
+replay_pid*.log
+/tools/__pycache__
