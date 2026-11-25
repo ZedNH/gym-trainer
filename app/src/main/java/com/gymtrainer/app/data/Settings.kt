@@ -44,6 +44,11 @@ class Settings(context: Context) {
         get() = prefs.getString("sex_kcal", "UNSPECIFIED") ?: "UNSPECIFIED"
         set(v) = prefs.edit().putString("sex_kcal", v).apply()
 
+    /** The first-run "How Gym Trainer works" guide on Today was dismissed. */
+    var guideSeen: Boolean
+        get() = prefs.getBoolean("guide_seen", false)
+        set(v) = prefs.edit().putBoolean("guide_seen", v).apply()
+
     var weeklyGoal: Int
         get() = prefs.getInt("weekly_goal", 4)
         set(v) = prefs.edit().putInt("weekly_goal", v).apply()

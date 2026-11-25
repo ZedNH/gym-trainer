@@ -1,7 +1,10 @@
 package com.gymtrainer.app
 
 import android.graphics.Bitmap
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onFirst
@@ -58,7 +61,13 @@ class ScreenshotTest {
         ui.click("Continue"); ui.click("Knees"); shot("10_limits")
         ui.click("Create my plan")
         compose.mainClock.advanceTimeBy(700); compose.waitForIdle(); shot("11_building")
-        ui.waitFor("This week"); shot("20_today")
+        ui.waitFor("Today's workout"); shot("20_today")
+        // Finger held halfway between Today and Workouts: pages and the dock pill are mid-transition.
+        compose.onRoot().performTouchInput { down(Offset(right * 0.85f, bottom * 0.12f)); moveTo(Offset(right * 0.55f, bottom * 0.12f)); moveTo(Offset(right * 0.4f, bottom * 0.12f)) }
+        compose.mainClock.advanceTimeBy(50); shot("22_mid_swipe")
+        compose.onRoot().performTouchInput { moveTo(Offset(right * 0.85f, bottom * 0.12f)); up() }
+        ui.settle()
+        ui.scrollTo("Today's workout", "Got it"); ui.click("Got it"); ui.settle()
         ui.swipeUntil("Recommended for you"); ui.swipeUntil("Full Body Beginner"); shot("21_today_scrolled")
 
         ui.clickDesc("Workouts"); ui.waitFor("Plans"); shot("30_workouts_home")

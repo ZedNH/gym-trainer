@@ -99,6 +99,7 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
     var player by remember { mutableStateOf<YouTubePlayer?>(null) }
     var view by remember { mutableStateOf<YouTubePlayerView?>(null) }
     var failed by remember(videoId) { mutableStateOf(false) }
+    var reason by remember(videoId) { mutableStateOf("") }
 
     Box(modifier) {
         AndroidView(
@@ -112,12 +113,15 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
                         .controls(1).rel(0).ivLoadPolicy(3).fullscreen(0)
                         .origin(embedOrigin(ctx))
                         .build()
+                    // YouTube's consent / bot checks need its cookies; Android WebViews block third-party cookies by default.
+                    allowYouTubeCookies(v)
                     v.initialize(object : AbstractYouTubePlayerListener() {
                         override fun onReady(youTubePlayer: YouTubePlayer) {
                             player = youTubePlayer
                             youTubePlayer.cueVideo(videoId, 0f)
                         }
                         override fun onError(youTubePlayer: YouTubePlayer, error: PlayerConstants.PlayerError) {
+                            reason = describe(error)
                             failed = true
                         }
                     }, options)
@@ -128,6 +132,7 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
             Box(Modifier.fillMaxSize().background(Color(0xF0101218)), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
                     Text("This video can't play inside the app.", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                    if (reason.isNotEmpty()) Text(reason, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(10.dp))
                     Row(
                         Modifier.clip(RoundedCornerShape(50)).background(Color(0xFFFF0033))
@@ -141,7 +146,12 @@ fun YouTubeEmbed(videoId: String, modifier: Modifier = Modifier) {
             }
         }
     }
-    LaunchedEffect(videoId, player) { failed = false; player?.cueVideo(videoId, 0f) }
+    LaunchedEffect(videoId, player) { failed = false; reason = ""; player?.cueVideo(videoId, 0f) }
+    // If YouTube never answers (blocked network, broken WebView), don't leave a blank box.
+    LaunchedEffect(videoId) {
+        kotlinx.coroutines.delay(15_000)
+        if (player == null && !failed) { reason = "The YouTube player didn't load (no response in 15 s)."; failed = true }
+    }
     DisposableEffect(Unit) {
         onDispose {
             view?.let { lifecycle.removeObserver(it); it.release() }
@@ -157,4 +167,24 @@ fun openOnYouTube(context: Context, videoId: String) {
     val app = Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:$videoId"))
     val web = Intent(Intent.ACTION_VIEW, Uri.parse(YouTube.watchUrl(videoId)))
     runCatching { context.startActivity(app) }.recoverCatching { context.startActivity(web) }
+}
+
+/** Readable reason for the fallback screen, so a screenshot tells us exactly what YouTube said. */
+private fun describe(error: PlayerConstants.PlayerError): String = when (error) {
+    PlayerConstants.PlayerError.VIDEO_NOT_PLAYABLE_IN_EMBEDDED_PLAYER -> "The creator doesn't allow this video in other apps (error 101/150)."
+    PlayerConstants.PlayerError.VIDEO_NOT_FOUND -> "Video removed or private (error 100)."
+    PlayerConstants.PlayerError.HTML_5_PLAYER -> "YouTube player error (5)."
+    PlayerConstants.PlayerError.INVALID_PARAMETER_IN_REQUEST -> "Invalid video request (2)."
+    else -> "YouTube refused the in-app player (${error.name})."
+}
+
+/** Finds the player's WebView and lets it keep YouTube's cookies. */
+private fun allowYouTubeCookies(root: android.view.View) {
+    val cookies = android.webkit.CookieManager.getInstance()
+    cookies.setAcceptCookie(true)
+    fun walk(v: android.view.View) {
+        if (v is android.webkit.WebView) cookies.setAcceptThirdPartyCookies(v, true)
+        if (v is android.view.ViewGroup) for (i in 0 until v.childCount) walk(v.getChildAt(i))
+    }
+    walk(root)
 }

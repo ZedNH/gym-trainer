@@ -105,7 +105,7 @@ fun TrainScreen(contentPadding: PaddingValues, nav: NavController) {
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            TabHeader("Workouts", "Home & gym") {
+            TabHeader("Workouts", hint = "Plans, programs and single workouts, at home or in the gym") {
                 com.gymtrainer.app.ui.components.CircleIconButton(androidx.compose.material.icons.Icons.Filled.Search, "Exercise library",
                     { nav.navigate(Routes.EXERCISES) })
             }
@@ -114,7 +114,9 @@ fun TrainScreen(contentPadding: PaddingValues, nav: NavController) {
             SegmentedTabs(listOf(Mode.HOME to "Home", Mode.GYM to "Gym"), mode, { mode = it }, Modifier.padding(horizontal = Gutter))
         }
         item {
-            LazyRow(contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                item { Text("Show level", style = MaterialTheme.typography.labelMedium, color = AppTheme.colors.textMuted, modifier = Modifier.padding(end = 4.dp)) }
                 items(Difficulty.entries) { d -> FilterPill(d.label, d == level) { levelName = d.name } }
             }
         }

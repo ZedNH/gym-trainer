@@ -94,7 +94,7 @@ fun ProgressScreen(contentPadding: PaddingValues, onBody: () -> Unit = {}, onVol
         contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item { TabHeader("Progress") }
+        item { TabHeader("Progress", hint = "Your results, records and body changes") }
         item {
             Column(Modifier.padding(horizontal = Gutter), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

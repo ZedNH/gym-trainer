@@ -1,5 +1,14 @@
 package com.gymtrainer.app.ui.home
 
+import com.gymtrainer.app.ui.components.EmptyState
+import com.gymtrainer.app.ui.components.SegmentedTabs
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material.icons.filled.SwipeLeft
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -76,6 +85,8 @@ fun HomeScreen(contentPadding: PaddingValues, nav: NavController) {
     val state by vm.state.collectAsStateWithLifecycle()
     val settings = rememberSettings()
     val rest = settings.homeRestSeconds
+    var guideSeen by remember { mutableStateOf(settings.guideSeen) }
+    var where by rememberSaveable { mutableStateOf("home") }
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -84,12 +95,60 @@ fun HomeScreen(contentPadding: PaddingValues, nav: NavController) {
     ) {
         item { Header(state) { nav.navigate(Routes.PROFILE) } }
 
-        // Week strip
+        // First-run guide: what each part of the app is for.
+        if (!guideSeen) item { GuideCard(Modifier.padding(horizontal = Gutter)) { settings.guideSeen = true; guideSeen = true } }
+
+        // 1. The one thing to do today.
+        item {
+            Column(Modifier.padding(horizontal = Gutter)) {
+                Text("Today's workout", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+                Text("Your next session from your plan. Tap Start when you're ready.",
+                    style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.textMuted)
+            }
+        }
+        if (state.place == TrainingPlace.BOTH) {
+            item {
+                SegmentedTabs(listOf("home" to "At home", "gym" to "At the gym"), where, { where = it },
+                    Modifier.padding(horizontal = Gutter))
+            }
+        }
+        val showGym = state.place == TrainingPlace.GYM || (state.place == TrainingPlace.BOTH && where == "gym")
+        if (!showGym && state.personal != null) {
+            item {
+                PersonalPlanCard(state, rest,
+                    onOpen = { state.personal?.let { nav.navigate(Routes.program(it.id)) } },
+                    onStart = { state.personalNext?.let { nav.navigate(Routes.homePreview(it.key)) } })
+            }
+        }
+        if (showGym) {
+            item {
+                if (state.gymDayId != null) {
+                    AppCard(Modifier.padding(horizontal = Gutter), onClick = { state.gymDayId?.let { nav.navigate(Routes.routine(it)) } }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconBadge(Icons.Filled.FitnessCenter, Brand.Orange, 50.dp)
+                            Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+                                Text("GYM SESSION", style = MaterialTheme.typography.labelSmall, color = Brand.Orange)
+                                Text(state.gymDayName.orEmpty(), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+                                Text("${state.gymExerciseCount} exercises · ${state.gymDayFocus.orEmpty()}", style = MaterialTheme.typography.bodySmall,
+                                    color = AppTheme.colors.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            PillButton("Start", { state.gymDayId?.let { nav.navigate(Routes.routine(it)) } }, icon = Icons.Filled.PlayArrow)
+                        }
+                    }
+                } else {
+                    EmptyState(Icons.Filled.FitnessCenter, "No gym plan yet", "Pick a program in Workouts, Gym tab, or build one from your profile.",
+                        Modifier.padding(horizontal = Gutter), "Go to Workouts") { nav.goToTab(Routes.TRAIN) }
+                }
+            }
+        }
+
+        // 2. How the week is going.
+        item { SectionHeader("This week", Modifier.padding(top = 6.dp)) }
         item {
             AppCard(Modifier.padding(horizontal = Gutter)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("This week", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                    Text("${state.workoutsThisWeek}/${settings.weeklyGoal} workouts", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text("Workouts done", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    Text("${state.workoutsThisWeek} of ${settings.weeklyGoal}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -106,39 +165,12 @@ fun HomeScreen(contentPadding: PaddingValues, nav: NavController) {
             }
         }
 
-        // Nutrition snapshot
+        // 3. Food & water at a glance.
+        item { SectionHeader("Food & water today", Modifier.padding(top = 6.dp), "Open") { nav.goToTab(Routes.NUTRITION) } }
         item { NutritionSnapshot { nav.goToTab(Routes.NUTRITION) } }
 
-        // Today's plan
-        item { SectionHeader("Today's plan", Modifier.padding(top = 6.dp)) }
-        if (state.place != TrainingPlace.GYM && state.personal != null) {
-            item {
-                PersonalPlanCard(state, rest,
-                    onOpen = { state.personal?.let { nav.navigate(Routes.program(it.id)) } },
-                    onStart = { state.personalNext?.let { nav.navigate(Routes.homePreview(it.key)) } })
-            }
-        }
-        if (state.place != TrainingPlace.HOME) {
-            item {
-                if (state.gymDayId != null) {
-                    AppCard(Modifier.padding(horizontal = Gutter), onClick = { state.gymDayId?.let { nav.navigate(Routes.routine(it)) } }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconBadge(Icons.Filled.FitnessCenter, Brand.Blue, 50.dp)
-                            Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
-                                Text("GYM SESSION", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                                Text(state.gymDayName.orEmpty(), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                                Text("${state.gymExerciseCount} exercises · ${state.gymDayFocus.orEmpty()}", style = MaterialTheme.typography.bodySmall,
-                                    color = AppTheme.colors.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                            PillButton("Start", { state.gymDayId?.let { nav.navigate(Routes.routine(it)) } }, icon = Icons.Filled.PlayArrow)
-                        }
-                    }
-                }
-            }
-        }
-
         // Challenges
-        item { SectionHeader("Challenges", Modifier.padding(top = 6.dp), "See all") { nav.goToTab(Routes.TRAIN) } }
+        item { SectionHeader("30-day challenges", Modifier.padding(top = 6.dp), "See all") { nav.goToTab(Routes.TRAIN) } }
         item {
             LazyRow(contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(state.challenges, key = { it.id }) { c ->
@@ -159,7 +191,13 @@ fun HomeScreen(contentPadding: PaddingValues, nav: NavController) {
         }
 
         // Recommended
-        item { SectionHeader("Recommended for you", Modifier.padding(top = 6.dp)) }
+        item {
+            Column {
+                SectionHeader("Recommended for you", Modifier.padding(top = 6.dp))
+                Text("Short extra workouts for your level, if you want more.", style = MaterialTheme.typography.bodySmall,
+                    color = AppTheme.colors.textMuted, modifier = Modifier.padding(horizontal = Gutter))
+            }
+        }
         items(state.recommended, key = { "rec_" + it.key }) { w ->
             WorkoutRow(w, rest, Modifier.padding(horizontal = Gutter)) { nav.navigate(Routes.homePreview(w.key)) }
         }
@@ -298,4 +336,29 @@ fun WorkoutRow(w: HomeWorkout, rest: Int, modifier: Modifier = Modifier, onClick
         leading = { IconBadge(icon, tint, 52.dp) },
         badge = { LevelBadge(w.level) }
     )
+}
+
+/** First-run explanation of the app's layout. Dismissed once with "Got it". */
+@Composable
+private fun GuideCard(modifier: Modifier, onDismiss: () -> Unit) {
+    AppCard(modifier, color = MaterialTheme.colorScheme.primaryContainer) {
+        Text("How Gym Trainer works", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Spacer(Modifier.height(10.dp))
+        listOf(
+            Triple(Icons.Filled.Today, "Today", "Your next workout is always at the top. Tap Start."),
+            Triple(Icons.Filled.FitnessCenter, "Workouts", "Browse home plans, gym programs and single workouts."),
+            Triple(Icons.Filled.Add, "The + button", "Log a meal or water, or start a quick workout from anywhere."),
+            Triple(Icons.Filled.SwipeLeft, "Swipe", "Swipe left or right to move between tabs.")
+        ).forEach { (icon, title, text) ->
+            Row(Modifier.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconBadge(icon, MaterialTheme.colorScheme.primary, 34.dp)
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                    Text(text, style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.textMuted)
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        PillButton("Got it", onDismiss)
+    }
 }

@@ -4,6 +4,10 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -27,6 +31,20 @@ class AppSmokeTest {
     fun endToEnd() {
         val ui = UiFlow(compose)
         ui.onboard()
+
+        // First-run guide explains the app and goes away for good.
+        ui.waitFor("How Gym Trainer works")
+        ui.scrollTo("How Gym Trainer works", "Got it"); ui.click("Got it"); ui.settle()
+        assert(!ui.exists("How Gym Trainer works"))
+
+        // Swipe between tabs: Today -> Workouts -> Nutrition, then back.
+        compose.onRoot().performTouchInput { swipe(Offset(right * 0.9f, bottom * 0.12f), Offset(right * 0.1f, bottom * 0.12f), 250) }
+        ui.waitFor("Plans, programs and single workouts", substring = true); ui.settle()
+        compose.onRoot().performTouchInput { swipe(Offset(right * 0.9f, bottom * 0.12f), Offset(right * 0.1f, bottom * 0.12f), 250) }
+        ui.waitFor("Meals, water and calories", substring = true); ui.settle()
+        compose.onRoot().performTouchInput { swipe(Offset(right * 0.1f, bottom * 0.12f), Offset(right * 0.9f, bottom * 0.12f), 250) }
+        ui.waitFor("Plans, programs and single workouts", substring = true); ui.settle()
+        ui.clickDesc("Today"); ui.settle(); ui.swipeDownUntil("Today's workout")
 
         // Dock tabs.
         ui.clickDesc("Workouts"); ui.waitFor("Plans"); ui.settle()

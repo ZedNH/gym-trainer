@@ -124,7 +124,7 @@ fun NutritionScreen(contentPadding: PaddingValues, onAddFood: (Meal, Long) -> Un
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            TabHeader("Nutrition") {
+            TabHeader("Nutrition", hint = "Meals, water and calories for the day") {
                 CircleIconButton(Icons.AutoMirrored.Filled.ArrowBack, "Previous day", { day -= 1 })
                 Text(dayLabel(day), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(horizontal = 10.dp))

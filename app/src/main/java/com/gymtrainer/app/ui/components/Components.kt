@@ -73,7 +73,7 @@ fun levelColor(level: Difficulty): Color = when (level) {
 
 /** Large title at the top of a bottom-nav tab. */
 @Composable
-fun TabHeader(title: String, subtitle: String? = null, trailing: (@Composable RowScope.() -> Unit)? = null) {
+fun TabHeader(title: String, subtitle: String? = null, hint: String? = null, trailing: (@Composable RowScope.() -> Unit)? = null) {
     Row(
         Modifier.fillMaxWidth().statusBarsPadding().padding(start = Gutter, end = Gutter, top = 12.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -81,6 +81,8 @@ fun TabHeader(title: String, subtitle: String? = null, trailing: (@Composable Ro
         Column(Modifier.weight(1f)) {
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelMedium, color = AppTheme.colors.textMuted)
             Text(title, style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.onBackground)
+            // One plain sentence saying what this tab is for.
+            if (hint != null) Text(hint, style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.textMuted)
         }
         trailing?.invoke(this)
     }

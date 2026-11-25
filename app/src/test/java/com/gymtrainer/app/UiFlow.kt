@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
@@ -61,7 +62,8 @@ class UiFlow(private val c: AndroidComposeTestRule<*, *>) {
     /** Scroll the list that currently shows [anchor] until [target] is composed. */
     fun scrollTo(anchor: String, target: String) {
         settle()
-        c.onNode(hasScrollToNodeAction() and hasAnyDescendant(hasText(anchor, substring = true)))
+        // The tab pager is also scrollable and contains the page; the innermost list is the last match.
+        c.onAllNodes(hasScrollToNodeAction() and hasAnyDescendant(hasText(anchor, substring = true))).onLast()
             .performScrollToNode(hasText(target, substring = true))
         // The floating dock overlays the bottom of the screen; lift the target clear of it.
         c.onRoot().performTouchInput { swipeUp(startY = bottom * 0.6f, endY = bottom * 0.35f, durationMillis = 300) }

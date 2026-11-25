@@ -1,5 +1,21 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package com.gymtrainer.app.ui.navigation
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlin.math.abs
 import android.net.Uri
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -109,10 +125,15 @@ private val dockTabs = listOf(
     DockTab(Routes.PROGRESS, "Progress", Icons.Filled.Insights)
 )
 
-fun NavController.goToTab(route: String) = navigate(route) {
-    popUpTo(graph.findStartDestination().id) { saveState = true }
-    launchSingleTop = true
-    restoreState = true
+/** Asks the tab pager to show [route]'s page (set from anywhere, e.g. "See all" buttons). */
+object TabSwitcher {
+    val request = mutableStateOf<Int?>(null)
+}
+
+fun NavController.goToTab(route: String) {
+    val index = dockTabs.indexOfFirst { it.route == route }
+    if (index >= 0) TabSwitcher.request.value = index
+    if (currentDestination?.route != Routes.HOME) popBackStack(Routes.HOME, inclusive = false)
 }
 
 /** Meal that fits the current time of day. */
@@ -159,13 +180,29 @@ fun AppRoot() {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
-    val showDock = dockTabs.any { it.route == currentRoute }
+    val showDock = currentRoute == Routes.HOME
+    val pager = rememberPagerState { dockTabs.size }
+    val tabSpec = tween<Float>(durationMillis = 380, easing = FastOutSlowInEasing)
+    val requested by TabSwitcher.request
+    LaunchedEffect(requested) {
+        requested?.let { pager.animateScrollToPage(it, animationSpec = tabSpec); TabSwitcher.request.value = null }
+    }
+    // Back on another tab goes to Today first, like most Android apps.
+    BackHandler(enabled = showDock && pager.currentPage != 0) { scope.launch { pager.animateScrollToPage(0, animationSpec = tabSpec) } }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            if (showDock) FloatingDock(dockTabs, currentRoute, onTab = { nav.goToTab(it) }, onAction = { showActions = true })
+            AnimatedVisibility(
+                visible = showDock,
+                enter = slideInVertically(tween(320, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(220)),
+                exit = slideOutVertically(tween(260, easing = FastOutSlowInEasing)) { it } + fadeOut(tween(180))
+            ) {
+                FloatingDock(dockTabs, pager.currentPage + pager.currentPageOffsetFraction,
+                    onTab = { i -> scope.launch { pager.animateScrollToPage(i, animationSpec = tabSpec) } },
+                    onAction = { showActions = true })
+            }
         }
     ) { padding ->
         NavHost(
@@ -177,12 +214,33 @@ fun AppRoot() {
             composable(Routes.ONBOARDING) {
                 OnboardingScreen(onDone = { nav.navigate(Routes.HOME) { popUpTo(Routes.ONBOARDING) { inclusive = true } } })
             }
-            composable(Routes.HOME) { HomeScreen(contentPadding = padding, nav = nav) }
-            composable(Routes.TRAIN) { TrainScreen(contentPadding = padding, nav = nav) }
-            composable(Routes.NUTRITION) {
-                NutritionScreen(contentPadding = padding, onAddFood = { meal, day -> nav.navigate(Routes.addFood(meal, day)) })
+            // The four main tabs live in one pager: swipe between them or tap the dock.
+            composable(Routes.HOME) {
+                HorizontalPager(
+                    state = pager,
+                    modifier = Modifier.fillMaxSize(),
+                    key = { dockTabs[it].route },
+                    flingBehavior = PagerDefaults.flingBehavior(
+                        state = pager,
+                        snapAnimationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+                    )
+                ) { page ->
+                    Box(Modifier.fillMaxSize().graphicsLayer {
+                        // Gentle depth: the page being left fades and shrinks a little.
+                        val offset = abs((pager.currentPage - page) + pager.currentPageOffsetFraction).coerceIn(0f, 1f)
+                        alpha = 1f - 0.25f * offset
+                        val sc = 1f - 0.04f * offset
+                        scaleX = sc; scaleY = sc
+                    }) {
+                        when (dockTabs[page].route) {
+                            Routes.HOME -> HomeScreen(contentPadding = padding, nav = nav)
+                            Routes.TRAIN -> TrainScreen(contentPadding = padding, nav = nav)
+                            Routes.NUTRITION -> NutritionScreen(contentPadding = padding, onAddFood = { meal, day -> nav.navigate(Routes.addFood(meal, day)) })
+                            else -> ProgressScreen(contentPadding = padding, onBody = { nav.navigate(Routes.BODY) }, onVolume = { nav.navigate(Routes.VOLUME) })
+                        }
+                    }
+                }
             }
-            composable(Routes.PROGRESS) { ProgressScreen(contentPadding = padding, onBody = { nav.navigate(Routes.BODY) }, onVolume = { nav.navigate(Routes.VOLUME) }) }
             composable(Routes.EXERCISES) { ExercisesScreen(contentPadding = padding, nav = nav, onBack = { nav.popBackStack() }) }
             composable(Routes.PROFILE) {
                 ProfileScreen(contentPadding = padding, onEditProfile = { nav.navigate(Routes.PROFILE_EDIT) },
